@@ -1,0 +1,153 @@
+import pandas as pd
+
+
+#1 Read Data from influencers.csv
+path ="D:/AI/"
+data =pd.read_csv(path + "influencers.csv")
+data = data.drop(columns="id")
+
+#2 Fuzzification
+#to Know the value of Max, Min, and Median to create degrees of followerCount and engagementRate membership
+
+flw_min = data['followerCount'].min()
+flw_max = data['followerCount'].max()
+
+eng_min = data['engagementRate'].min()
+eng_max = data['engagementRate'].max()
+
+def linierUp(a,b,x):
+    return ((x-a) / (b-a))
+
+def linierDown(a,b,x):
+    return ((b-x) / (b-a))
+
+# Input Fuzzy Rule Followers and Engagement 
+def Followers(x):
+    if (x<=1526):
+        FollowersMember = [1,0,0,0,0]
+    elif (x>=95117) :
+        FollowersMember = [0,0,0,0,1]
+    elif (x==24924) :
+        FollowersMember = [0,1,0,0,0]
+    elif ((x>=36623) and (x<=60021)) :
+        FollowersMember = [0,0,1,0,0]
+    elif (x==71720):
+        FollowersMember = [0,0,0,1,0]
+    elif (x>71720) and (x<95117):
+        FollowersMember = [0,0,0,linierDown(71720,95117,x),linierUp(71720,95117,x)]
+    elif (x>60021) :
+        FollowersMember = [0,0,linierDown(60021,71720,x),linierUp(60021,71720,x),0]
+    elif (x>24924):
+        FollowersMember = [0,linierDown(24924,36623,x),linierUp(24924,36623,x),0,0]
+    elif (x>15):
+        FollowersMember = [linierDown(1526,24924,x),linierUp(1526,24924,x),0,0,0]
+    return FollowersMember
+
+def EngRate(x):
+    if (x<=0.10):
+        EngRateMember = [1,0,0,0,0]
+    elif (x>=9.40) :
+        EngRateMember = [0,0,0,0,1]
+    elif (x==2.43) :
+        EngRateMember = [0,1,0,0,0]
+    elif (x==4.75):
+        EngRateMember = [0,0,1,0,0]
+    elif(x==7.10):
+        EngRateMember = [0,0,0,1,0]
+    elif (x>7.10) and (x<9.40):
+        EngRateMember = [0,0,0,linierDown(7.10,9.40,x),linierUp(7.10,9.40,x)]
+    elif (x>4.75) :
+        EngRateMember = [0,0,linierDown(4.75,7.10,x),linierUp(4.75,7.10,x),0]
+    elif (x>2.43):
+        EngRateMember = [0,linierDown(2.43,4.75,x),linierUp(2.43,4.75,x),0,0]
+    elif (x>0.10):
+        EngRateMember = [linierDown(0.10,2.43,x),linierUp(0.10,2.43,x),0,0,0]
+    return EngRateMember
+
+def findMin(followers,eng_rate):
+    if followers <= eng_rate :
+        return followers
+    else :
+        return eng_rate
+   
+#3 Inference followers and engagement to recommendation
+def inference(followers,eng_rate):
+    x = -1
+    RecommendationMember = [0,0,0]
+    for i in followers:
+        x += 1
+        y = -1
+        for j in eng_rate:
+            y += 1
+            if ((i>0) and (j>0)):
+                if ((x==0) and ((y==0) or (y==1) or (y==2))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[0]):
+                        RecommendationMember[0] = findMin(followers[x],eng_rate[y])
+                elif ((x==0) and (y==3)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[1]):
+                        RecommendationMember[1] = findMin(followers[x],eng_rate[y])
+                elif ((x==0) and (y==4)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[2]):
+                        RecommendationMember[2] = findMin(followers[x],eng_rate[y])
+                elif ((x==1) and ((y==0) or (y==1))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[0]):
+                        RecommendationMember[0] = findMin(followers[x],eng_rate[y])
+                elif ((x==1) and (y==2)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[1]):
+                        RecommendationMember[1] = findMin(followers[x],eng_rate[y])
+                elif ((x==1) and ((y==3) or (y==4))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[2]):
+                        RecommendationMember[2] = findMin(followers[x],eng_rate[y])
+                elif ((x==2) and (y==0)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[0]):
+                        RecommendationMember[0] = findMin(followers[x],eng_rate[y])
+                elif ((x==2) and ((y==1) or (y==2) or (y==3))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[1]):
+                        RecommendationMember[1] = findMin(followers[x],eng_rate[y])
+                elif ((x==2) and (y==4)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[2]):
+                        RecommendationMember[2] = findMin(followers[x],eng_rate[y])
+                elif ((x==2) and (y==0)):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[0]):
+                        RecommendationMember[0] = findMin(followers[x],eng_rate[y])
+                elif ((x==3) and ((y==1) or (y==2))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[1]):
+                        RecommendationMember[1] = findMin(followers[x],eng_rate[y])
+                elif ((x==3) and ((y==3) or (y==4))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[2]):
+                        RecommendationMember[2] = findMin(followers[x],eng_rate[y])
+                elif ((x==4) and ((y==0) or (y==1))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[1]):
+                        RecommendationMember[1] = findMin(followers[x],eng_rate[y])
+                elif ((x==4) and ((y==2) or (y==3) or (y==4))):
+                    if (findMin(followers[x],eng_rate[y])>RecommendationMember[2]):
+                        RecommendationMember[2] = findMin(followers[x],eng_rate[y])
+    return RecommendationMember
+
+#4 De-Fuzzification to seperate influencer recommended, consider and rejected
+def defuzzyfication(recommendation):
+    result = recommendation[0] * 0.3
+    result += recommendation[1] * 0.6
+    result += recommendation[2] * 0.8
+    result /= (recommendation[0]+recommendation[1]+recommendation[2])
+    result *= 100
+    if (result >=50) :
+        return "Recommended"
+    elif (result >= 35 and result <= 50) :
+        return "Consider"
+    else :  
+        return "Rejected"
+
+#Main Function all
+def loadData():
+    list_data = data.values.tolist()
+    return list_data
+
+def main():
+    data = loadData()
+    x = 0
+    for i in data:
+        x+=1
+        recommendation = inference(Followers(i[0]),EngRate(i[1]))
+        print (x,"||",i[0],"||",i[1],"||",defuzzyfication(recommendation))
+main()
